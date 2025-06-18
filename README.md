@@ -1,2 +1,2 @@
 # Recommender-system
-Build a scalable movie recommendation system using pyspark with scheduled ETL pipelines via Airflow . Store intermediate results in s3 and save the final user recommdations in AWS DynamoDB for low latency retrieval 
+An end-to-end movie recommendation system built with PySpark ML ALS, AWS DynamoDB, EC2, and Step Functions. This project demonstrates collaborative filtering using the MovieLens dataset with a fully automated ML pipeline.
