@@ -9,7 +9,7 @@ from datetime import datetime
 import logging
 
 
-logging.basiconfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 logger=logging.getLogger(__name__)
 
 class MovieRecommendationEngine:
@@ -17,8 +17,8 @@ class MovieRecommendationEngine:
         self.spark=SparkSession.builder \
             .appName("MovieRecommendationEngine") \
             .config("spark.sql.adaptive.enabled","true") \
-            .config("spark.sql.adaptive.coaledcePartitions.enabled","true") \
-            .getorCreate()
+            .config("spark.sql.adaptive.coalescePartitions.enabled","true") \
+            .getOrCreate()
         self.dynamodb=boto3.resource('dynamodb',region_name='us-east-1')
         self.recommendations_table=self.dynamodb.Table('movie-recommendations')
         self.metadata_table=self.dynamodb.Table("model-metadata")
@@ -34,7 +34,7 @@ class MovieRecommendationEngine:
 
         return ratings,movies
 
-    def prepare_data(self,training_data):
+    def prepare_data(self,ratings):
         logger.info("prepare data for training")
         #split data into training and test
         (training,test)=ratings.randomSplit([0.8,0.2],seed=42)
