@@ -1,6 +1,7 @@
 import sys
 import boto3
 import json
+import numpy as np
 from pyspark.sql import SparkSession
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.recommendation import ALS
@@ -8,6 +9,8 @@ from pyspark.sql.functions import col,explode, lit
 from datetime import datetime
 import logging
 
+S3_BUCKET= "recommender-movielens-slv"
+MODEL_VERSION=datetime.now().strftime("%Y%m%d-%H%M")
 
 logging.basicConfig(level=logging.INFO)
 logger=logging.getLogger(__name__)
@@ -62,6 +65,12 @@ class MovieRecommendationEngine:
         
         logger.info("ALS model training completed")
         return model
+
+    def save_model_to_s3(model):
+        model_path=f"s3a://{S3_BUCKET}/movielens/models/{MODEL_VERSION}"
+        model.write().overwrite().save(model_path)
+        print(f"model saved to {model_path}")
+        return model_path
 
     def evaluate_model(self, model, test_data):
        
@@ -137,6 +146,9 @@ class MovieRecommendationEngine:
             
             # Train model
             model = self.train_als_model(training)
+
+            #save model to s3
+            save_model_to_s3(model)
             
             # Evaluate model
             rmse = self.evaluate_model(model, test)
@@ -158,11 +170,11 @@ class MovieRecommendationEngine:
             logger.info("Pipeline completed successfully!")
             return {"status": "success", "rmse": rmse}
 
-         except Exception as e:
+        except Exception as e:
             logger.error(f"Pipeline failed: {str(e)}")
             return {"status": "error", "message": str(e)}
         
-         finally:
+        finally:
             if hasattr(self, 'spark'):
                 self.spark.stop()
 

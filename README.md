@@ -31,7 +31,7 @@ aws dynamodb describe-table --table-name movie-recommendations
 python3 upload_movielens_to_s3.py
 
 # Run the recommendation engine
-python3 recommendation_engine.py s3://recommender-movielens-slv/movielens
+python3 als_recommender.py s3://recommender-movielens-slv/movielens
 
 
 
