@@ -31,7 +31,23 @@ aws dynamodb describe-table --table-name movie-recommendations
 python3 upload_movielens_to_s3.py
 
 # Run the recommendation engine
-python3 als_recommender.py s3://recommender-movielens-slv/movielens
+python3 als_recommender.py s3a://recommender-movielens-slv/movielens
+
+spark-submit \
+  --packages org.apache.hadoop:hadoop-aws:3.3.1 \
+  als_recommender.py s3a://recommender-movielens-slv/movielens
+
+
+spark-submit \
+  --conf "spark.hadoop.fs.s3a.connection.timeout=200000" \
+  --conf "spark.hadoop.fs.s3a.connection.establish.timeout=30000" \
+  config_check.py
+
+spark-submit \
+  --packages org.apache.hadoop:hadoop-aws:3.3.1 \
+  --conf spark.hadoop.fs.s3a.connection.timeout=200000 \
+  --conf spark.hadoop.fs.s3a.connection.establish.timeout=30000 \
+  config_check.py
 
 
 

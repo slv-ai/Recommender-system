@@ -9,19 +9,22 @@ from pyspark.sql.functions import col,explode, lit
 from datetime import datetime
 import logging
 
-S3_BUCKET= "recommender-movielens-slv"
-MODEL_VERSION=datetime.now().strftime("%Y%m%d-%H%M")
-
 logging.basicConfig(level=logging.INFO)
 logger=logging.getLogger(__name__)
 
 class MovieRecommendationEngine:
     def __init__(self):
-        self.spark=SparkSession.builder \
-            .appName("MovieRecommendationEngine") \
-            .config("spark.sql.adaptive.enabled","true") \
-            .config("spark.sql.adaptive.coalescePartitions.enabled","true") \
+        self.spark = (SparkSession.builder
+            .appName("MovieRecommendationEngine")
+            .config("fs.s3a.connection.timeout", "300000")
+            .config("fs.s3a.connection.establish.timeout", "300000")
+            .config("fs.s3a.attempts.maximum", "10")
+            .config("spark.sql.adaptive.enabled", "true")
+            .config("spark.sql.adaptive.coalescePartitions.enabled", "true")
+            .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+            .config("spark.hadoop.fs.s3a.aws.credentials.provider", "com.amazonaws.auth.InstanceProfileCredentialsProvider")
             .getOrCreate()
+        )       
         self.dynamodb=boto3.resource('dynamodb',region_name='us-east-1')
         self.recommendations_table=self.dynamodb.Table('movie-recommendations')
         self.metadata_table=self.dynamodb.Table("model-metadata")
@@ -66,12 +69,14 @@ class MovieRecommendationEngine:
         logger.info("ALS model training completed")
         return model
 
-    def save_model_to_s3(model):
-        model_path=f"s3a://{S3_BUCKET}/movielens/models/{MODEL_VERSION}"
-        model.write().overwrite().save(model_path)
-        print(f"model saved to {model_path}")
+    def save_model_to_s3(self,model):
+        S3_BUCKET = "recommender-movielens-slv"  
+        MODEL_VERSION=datetime.now().strftime("%Y%m%d-%H%M")
+        model_path = f"s3a://{S3_BUCKET}/movielens/models/{MODEL_VERSION}"   
+        model.write.overwrite().save(model_path)
+        logger.info(f"Model saved to {model_path}")
         return model_path
-
+       
     def evaluate_model(self, model, test_data):
        
         logger.info("Evaluating model...")
@@ -148,7 +153,7 @@ class MovieRecommendationEngine:
             model = self.train_als_model(training)
 
             #save model to s3
-            save_model_to_s3(model)
+            self.save_model_to_s3(model)
             
             # Evaluate model
             rmse = self.evaluate_model(model, test)
