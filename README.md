@@ -25,7 +25,7 @@ aws dynamodb create-table \
     --billing-mode PAY_PER_REQUEST
 ```
 ##### verify tables are created
-``
+```
 aws dynamodb list-tables
 ```
 ###to inspect schema
@@ -33,7 +33,7 @@ aws dynamodb list-tables
 aws dynamodb describe-table --table-name movie-recommendations
 ```
 ##### Run the script:
-``
+```
 python3 upload_movielens_to_s3.py
 ```
 #### Run the recommendation engine
